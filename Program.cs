@@ -11,8 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+DotNetEnv.Env.Load();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = DotNetEnv.Env.GetString("ConnectionStrings__DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "Connection string 'DefaultConnection' não está configurada (appsettings / variáveis de ambiente).");
