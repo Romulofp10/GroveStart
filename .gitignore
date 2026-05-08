@@ -1,1 +1,74 @@
-appsettings
+# =========================
+# Build artifacts
+# =========================
+bin/
+obj/
+out/
+TestResults/
+
+# =========================
+# User-specific files
+# =========================
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# =========================
+# IDE / Editor
+# =========================
+.vs/
+.vscode/
+.idea/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+packages/
+# Se você usa PackageReference (padrão), pode ignorar globalmente:
+# !**/packages/build/
+
+# =========================
+# Publish / Generated files
+# =========================
+publish/
+artifacts/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Coverage
+# =========================
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# =========================
+# Secrets / Local env
+# =========================
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# =========================
+# Keep sample configs versioned
+# =========================
+!appsettings.json
+!appsettings.Example.json
