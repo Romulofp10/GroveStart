@@ -1,6 +1,8 @@
 using GroveStart.Infra;
+using GroveStart.Model;
 using GroveStart.Repository;
 using GroveStart.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,18 +12,45 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' não está configurada (appsettings / variáveis de ambiente).");
+
 builder.Services.AddDbContext<ConnectionContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(connectionString);
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+    }
+});
+
+builder.Services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    logging.RequestBodyLogLimit = 4096;
+    logging.ResponseBodyLogLimit = 4096;
+});
 
 // Repositórios específicos
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPasswordHasher<User>,PasswordHasher<User>>();
 // Serviços
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();  // Adicione esta linha
 
 // Serviços
 builder.Services.AddControllers();
+
+builder.Services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    logging.RequestBodyLogLimit = 4096;
+    logging.ResponseBodyLogLimit = 4096;
+});
 
 var app = builder.Build();
 
@@ -33,31 +62,64 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+}
+else
+{
+    app.UseDeveloperExceptionPage();
+}
+app.UseAuthentication();
+app.UseAuthorization();
+app.Use(async(context,next) =>
+{
+    Console.WriteLine(context.Request.Path);
+    await next.Invoke();
+    Console.WriteLine(context.Response.StatusCode);
+});
+
+app.UseWhen(context => context.Request.Method != "GET", branch =>
+{
+    branch.Use(async (context, next) =>
+    {
+        Console.WriteLine("not get method");
+        await next.Invoke();
+    });
+});
+
+app.Use(async (context, next) =>
+{
+    var IsAuthorized = context.Request.Headers["API_KEY_TESTE"] == "MY_API_KEY";
+    if (!IsAuthorized)
+    {
+        context.Response.StatusCode = 403;
+        await context.Response.WriteAsync("Access Denied");
+        return;
+    }
+    context.Response.Cookies.Append("SecureCookie", "SecureData",new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true
+    });
+    await next();
+});
+
+app.Use(async (context, next) =>
+{
+    // Check for a query parameter to simulate HTTPS enforcement (e.g., "?secure=true")
+    if (context.Request.Query["secure"] != "true")
+    {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsync("Simulated HTTPS Required");
+        return;
+    }
+
+    await next();
+});
+
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
 
 app.MapControllers();
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

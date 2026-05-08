@@ -1,0 +1,27 @@
+---
+description: Sempre explicar alterações em passo a passo (GroveStart / .NET iniciante)
+alwaysApply: true
+---
+
+# Explicações pedagógicas (GroveStart)
+
+O usuário está aprendendo .NET. **Em toda resposta após alterar código**, incluir de forma clara e em português:
+
+1. **Resumo** — o que o problema/pedido era.
+2. **Passo a passo** — em que ordem as mudanças foram feitas.
+3. **Arquivos tocados** — lista com o papel de cada um.
+4. **Métodos / APIs** — nomes de métodos, assinaturas relevantes, e o que cada um passou a fazer.
+5. **Por quê** — motivo de cada adição (decisão técnica, não só “o que”).
+
+## Contexto já vivido neste repo (usar como referência de profundidade)
+
+- **Connection string + `Program.cs`**: `AddDbContext` registra o `ConnectionContext` com Npgsql; a string vem de `DefaultConnection` para apontar ao Neon; validar string vazia evita falha silenciosa.
+- **`[JsonConstructor]` no `User`**: o `System.Text.Json` precisa saber qual construtor usar quando não há propriedades com `set` público; sem isso o corpo do POST não desserializa certo.
+- **`SaveChangesAsync` no repositório**: `Add` só marca a entidade; o INSERT só ocorre no `SaveChanges` — padrão do EF Core.
+- **`DateTime.UtcNow`**: colunas `timestamptz` no PostgreSQL exigem horário UTC; `DateTime.Now` é `Local` e o Npgsql rejeita.
+- **Logs (`ILogger`)**: rastrear fluxo de cadastro e SQL (categoria `Microsoft.EntityFrameworkCore.Database.Command` em Development) sem logar senha.
+
+## O que evitar
+
+- Só colar diff sem explicação.
+- Jargão sem definição curta quando o termo for novo para iniciante.

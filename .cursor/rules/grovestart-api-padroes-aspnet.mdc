@@ -1,0 +1,39 @@
+---
+description: Padrões de API REST e escalabilidade para ASP.NET Core (GroveStart)
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# API ASP.NET Core — direção alinhada a padrões da Microsoft
+
+Ao evoluir este projeto, preferir:
+
+## Contratos e camadas
+
+- **DTOs (request/response)** separados das entidades EF (`User` etc.): a API expõe contratos estáveis; o domínio continua com construtores e regras.
+- **Validação**: `DataAnnotations` ou FluentValidation; respostas **400** com detalhes (`ValidationProblemDetails` / `Results.ValidationProblem`).
+
+## Erros e respostas
+
+- Usar **Problem Details** (RFC 7807): `https://datatracker.ietf.org/doc/html/rfc7807` — status, `title`, `detail`, `type`; em Minimal APIs: `IProblemDetailsService`.
+- Não vazar exceções internas em produção; logar com `ILogger` e retornar mensagem genérica.
+
+## Assíncrono e performance
+
+- Endpoints e repositórios: **`async`/`await`** até o fim; evitar `.Result` / `.Wait()`.
+- **Paginação** em listas (`page`, `pageSize` ou cursor); evitar `ToList()` em tabelas grandes sem limite.
+
+## Dados (EF + Postgres)
+
+- **Migrations** versionadas; connection string em **User Secrets** / variáveis de ambiente, não credenciais no repositório.
+- Datas: persistir em **UTC**; exibir com fuso na UI ou API se necessário.
+
+## Observabilidade
+
+- Logging estruturado; health checks (`/health`) se houver orquestração.
+
+## Próximos passos sugeridos para este repo (incremental)
+
+1. Criar DTOs `CreateUserRequest` / `UserResponse` e mapear no controller.
+2. Centralizar configuração de JSON e validação.
+3. Tratar `DbUpdateException` e retornar Problem Details consistente.

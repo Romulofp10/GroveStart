@@ -24,9 +24,6 @@ namespace GroveStart.Repository
         public async Task AddAsync(Order order)
             => await _dbSet.AddAsync(order);
 
-        public void Update(Order order)
-            => _dbSet.Update(order);
-
         public void Delete(Order order)
             => _dbSet.Remove(order);
 
@@ -44,23 +41,7 @@ namespace GroveStart.Repository
         {
             // Apenas lógica de acesso a dados
             // Validações ficam no Service Layer
-
-            if (order == null)
-                throw new ArgumentNullException(nameof(order));
-
-            var existingOrder = await GetByIdAsync(order.Id);
-            if (existingOrder == null)
-                throw new KeyNotFoundException("Order não encontrada");
-
-            // Aplicar mudanças usando o método Update da classe
-            existingOrder.Update( order.UserId,
-                order.CustomerId,
-                order.Title,
-                order.Description,
-                order.Period,
-                order.StartDate,
-                order.EndDate);
-            Update(existingOrder);
+            _dbSet.Update(order);
         }
 
         public async Task<List<Order>> GetOrdersByPeriodAsync(Period period)
