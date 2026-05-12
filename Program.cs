@@ -55,13 +55,20 @@ builder.Services.AddHttpLogging(logging =>
 
 var app = builder.Build();
 
+static bool IsSwaggerOrOpenApiPath(PathString path) =>
+    path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase)
+    || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
+
+var enableSwagger = app.Environment.IsDevelopment()
+    || app.Configuration.GetValue("EnableSwagger", false);
+
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (enableSwagger)
 {
-}
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -91,6 +98,12 @@ app.UseWhen(context => context.Request.Method != "GET", branch =>
 
 app.Use(async (context, next) =>
 {
+    if (IsSwaggerOrOpenApiPath(context.Request.Path))
+    {
+        await next();
+        return;
+    }
+
     var IsAuthorized = context.Request.Headers["API_KEY_TESTE"] == "MY_API_KEY";
     if (!IsAuthorized)
     {
@@ -108,6 +121,12 @@ app.Use(async (context, next) =>
 
 app.Use(async (context, next) =>
 {
+    if (IsSwaggerOrOpenApiPath(context.Request.Path))
+    {
+        await next();
+        return;
+    }
+
     // Check for a query parameter to simulate HTTPS enforcement (e.g., "?secure=true")
     if (context.Request.Query["secure"] != "true")
     {
@@ -119,7 +138,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseHttpsRedirection();
+if (app.Configuration.GetValue("UseHttpsRedirection", true))
+{
+    app.UseHttpsRedirection();
+}
 
 app.MapControllers();
 app.Run();
