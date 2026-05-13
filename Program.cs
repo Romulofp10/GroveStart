@@ -59,8 +59,9 @@ static bool IsSwaggerOrOpenApiPath(PathString path) =>
     path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase)
     || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
 
+// Development: sempre. Demais ambientes: appsettings + variável de ambiente (ex.: EnableSwagger=true).
 var enableSwagger = app.Environment.IsDevelopment()
-    || app.Configuration.GetValue("EnableSwagger", false);
+    || app.Configuration.GetValue<bool>("EnableSwagger");
 
 // Configure the HTTP request pipeline.
 if (enableSwagger)
@@ -138,7 +139,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
-if (app.Configuration.GetValue("UseHttpsRedirection", true))
+if (app.Configuration.GetValue<bool>("UseHttpsRedirection"))
 {
     app.UseHttpsRedirection();
 }
