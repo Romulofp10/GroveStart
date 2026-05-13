@@ -144,6 +144,8 @@ if (app.Configuration.GetValue<bool>("UseHttpsRedirection"))
     app.UseHttpsRedirection();
 }
 
+app.MapHealthChecks("/health");
+
 app.MapControllers();
 app.Run();
 
