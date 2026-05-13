@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 DotNetEnv.Env.Load();
 
 var connectionString = DotNetEnv.Env.GetString("ConnectionStrings__DefaultConnection");
