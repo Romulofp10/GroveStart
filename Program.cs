@@ -60,6 +60,11 @@ static bool IsSwaggerOrOpenApiPath(PathString path) =>
     path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase)
     || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
 
+// Rotas públicas para load balancer / monitoramento (sem API key nem ?secure=)
+static bool IsPublicProbePath(PathString path) =>
+    IsSwaggerOrOpenApiPath(path)
+    || path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase);
+
 // Development: sempre. Demais ambientes: appsettings + variável de ambiente (ex.: EnableSwagger=true).
 var enableSwagger = app.Environment.IsDevelopment()
     || app.Configuration.GetValue<bool>("EnableSwagger");
@@ -100,7 +105,7 @@ app.UseWhen(context => context.Request.Method != "GET", branch =>
 
 app.Use(async (context, next) =>
 {
-    if (IsSwaggerOrOpenApiPath(context.Request.Path))
+    if (IsPublicProbePath(context.Request.Path))
     {
         await next();
         return;
@@ -123,7 +128,7 @@ app.Use(async (context, next) =>
 
 app.Use(async (context, next) =>
 {
-    if (IsSwaggerOrOpenApiPath(context.Request.Path))
+    if (IsPublicProbePath(context.Request.Path))
     {
         await next();
         return;
