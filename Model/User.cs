@@ -35,6 +35,11 @@ namespace GroveStart.Model
 
         public DateTime? DeletedAt {get; private set;}
 
+            // Orders em que este user é o "UserId"
+        public ICollection<Order> OrdersAsUser { get; private set; } = new List<Order>();
+        // Orders em que este user é o "CustomerId"
+        public ICollection<Order> OrdersAsCustomer { get; private set; } = new List<Order>();
+
         [JsonConstructor]
         public User(string name, string email, int age, string password)
         {

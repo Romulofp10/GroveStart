@@ -6,7 +6,7 @@ namespace GroveStart.Repository
     {
         Task<List<Order>> GetAllAsync();
         Task<Order?> GetByIdAsync(int id);
-        Task AddAsync(Order order);
+        Task <Order> AddAsync(Order order);
         Task DeleteByIdAsync(int id);
         Task SaveChangesAsync();
         

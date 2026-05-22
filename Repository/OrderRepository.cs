@@ -21,9 +21,14 @@ namespace GroveStart.Repository
         public async Task<Order?> GetByIdAsync(int id)
             => await _dbSet.FindAsync(id);
 
-        public async Task AddAsync(Order order)
-            => await _dbSet.AddAsync(order);
-
+        public async Task<Order> AddAsync(Order order)
+        {
+           var newOrder =  (await _dbSet.AddAsync(order)).Entity;
+             await _context.SaveChangesAsync();
+              return newOrder;
+        } 
+            
+    
         public void Delete(Order order)
             => _dbSet.Remove(order);
 

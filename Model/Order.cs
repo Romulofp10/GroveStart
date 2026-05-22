@@ -24,6 +24,11 @@ namespace GroveStart.Model
         public string Title { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
 
+        public User User { get; private set; } = null!;
+        public User Customer { get; private set; } = null!;
+
+        public Chat? Chat { get; private set; }
+
         public Period Period { get; private set; }
         public DateTime StartDate { get; private set; }
         public DateTime EndDate { get; private set; }

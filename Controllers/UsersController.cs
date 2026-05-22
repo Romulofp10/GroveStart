@@ -103,10 +103,9 @@ namespace GroveStart.Controllers
                 await _userService.Delete(id);
                 return NoContent();
             }
-            catch (Exception error)
+            catch (KeyNotFoundException)
             {
-                
-                throw error;
+                return NotFound();
             }
         }
     }

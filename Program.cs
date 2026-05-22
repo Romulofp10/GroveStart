@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GroveStart.Infra;
 using GroveStart.Model;
 using GroveStart.Repository;
@@ -8,9 +9,10 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// OpenAPI 3.x gerado em runtime em /openapi/v1.json (Microsoft.AspNetCore.OpenApi).
+// Learn more: https://aka.ms/aspnet/openapi
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 DotNetEnv.Env.Load();
 
@@ -45,36 +47,23 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();  // Adicione esta linha
 
 // Serviços
-builder.Services.AddControllers();
-
-builder.Services.AddHttpLogging(logging =>
+builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
-    logging.RequestBodyLogLimit = 4096;
-    logging.ResponseBodyLogLimit = 4096;
+    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
+
 
 var app = builder.Build();
 
-static bool IsSwaggerOrOpenApiPath(PathString path) =>
-    path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase)
-    || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
-
-// Rotas públicas para load balancer / monitoramento (sem API key nem ?secure=)
-static bool IsPublicProbePath(PathString path) =>
-    IsSwaggerOrOpenApiPath(path)
-    || path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase);
-
-// Development: sempre. Demais ambientes: appsettings + variável de ambiente (ex.: EnableSwagger=true).
-var enableSwagger = app.Environment.IsDevelopment()
-    || app.Configuration.GetValue<bool>("EnableSwagger");
-
 // Configure the HTTP request pipeline.
-if (enableSwagger)
+if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    // Swagger UI apenas como cliente visual; o contrato vem do OpenAPI acima.
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", $"{app.Environment.ApplicationName} (OpenAPI v1)");
+    });
 }
 
 if (!app.Environment.IsDevelopment())
@@ -101,48 +90,6 @@ app.UseWhen(context => context.Request.Method != "GET", branch =>
         Console.WriteLine("not get method");
         await next.Invoke();
     });
-});
-
-app.Use(async (context, next) =>
-{
-    if (IsPublicProbePath(context.Request.Path))
-    {
-        await next();
-        return;
-    }
-
-    var IsAuthorized = context.Request.Headers["API_KEY_TESTE"] == "MY_API_KEY";
-    if (!IsAuthorized)
-    {
-        context.Response.StatusCode = 403;
-        await context.Response.WriteAsync("Access Denied");
-        return;
-    }
-    context.Response.Cookies.Append("SecureCookie", "SecureData",new CookieOptions
-    {
-        HttpOnly = true,
-        Secure = true
-    });
-    await next();
-});
-
-app.Use(async (context, next) =>
-{
-    if (IsPublicProbePath(context.Request.Path))
-    {
-        await next();
-        return;
-    }
-
-    // Check for a query parameter to simulate HTTPS enforcement (e.g., "?secure=true")
-    if (context.Request.Query["secure"] != "true")
-    {
-        context.Response.StatusCode = 400;
-        await context.Response.WriteAsync("Simulated HTTPS Required");
-        return;
-    }
-
-    await next();
 });
 
 if (app.Configuration.GetValue<bool>("UseHttpsRedirection"))

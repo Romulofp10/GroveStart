@@ -12,8 +12,11 @@ namespace GroveStart.Model
 
         public int UserId { get; set; }
         public int CustomerId { get; set; }
-
+        
+         
         public int OrderId { get; set; }
+        
+        public Order Order { get; private set; } = null!;
 
         public Chat(int id, int userId, int customerId, int orderId)
         {

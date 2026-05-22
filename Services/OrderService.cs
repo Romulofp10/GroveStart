@@ -6,28 +6,27 @@ namespace GroveStart.Services
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IUserService   _userService;
 
-        public OrderService(IOrderRepository orderRepository)
+        public OrderService(IOrderRepository orderRepository, IUserService userService)
         {
             _orderRepository = orderRepository;
+            _userService = userService;
         }
 
         public async Task<Order> CreateOrderAsync(Order order)
         {
-            // Validações de negócio
-            if (string.IsNullOrWhiteSpace(order.Title))
-                throw new ArgumentException("Título é obrigatório");
+          
+          var existsUser =  await _userService.Get(order.UserId);
 
-            if (order.UserId <= 0)
-                throw new ArgumentException("ID do usuário inválido");
+         var existsCustomer = await _userService.Get(order.CustomerId);
+         
+         if (existsCustomer is null || existsUser is null)
+         {
+            throw new InvalidDataException("Nao contem user e customer no banco de dados.");
+         }
 
-            // Regras específicas
-            if (order.Period == Period.Mensal && order.Title.Length < 5)
-                throw new InvalidOperationException("Pedidos mensais precisam de título com pelo menos 5 caracteres");
-
-            await _orderRepository.AddAsync(order);
-            await _orderRepository.SaveChangesAsync();
-
+            var createdOrder = await _orderRepository.AddAsync(order);
             return order;
         }
 
