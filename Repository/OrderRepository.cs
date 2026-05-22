@@ -16,10 +16,16 @@ namespace GroveStart.Repository
         }
 
         public async Task<List<Order>> GetAllAsync()
-            => await _dbSet.ToListAsync();
+            => await _dbSet
+                .Include(o => o.Customer)
+                .Include(o => o.User)
+                .ToListAsync();
 
         public async Task<Order?> GetByIdAsync(int id)
-            => await _dbSet.FindAsync(id);
+            => await _dbSet
+                .Include(o => o.Customer)
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.Id == id);
 
         public async Task AddAsync(Order order)
             => await _dbSet.AddAsync(order);
@@ -47,6 +53,8 @@ namespace GroveStart.Repository
         public async Task<List<Order>> GetOrdersByPeriodAsync(Period period)
         {
             return await _dbSet
+                .Include(o => o.Customer)
+                .Include(o => o.User)
                 .Where(o => o.Period == period)
                 .ToListAsync();
         }
@@ -54,6 +62,8 @@ namespace GroveStart.Repository
         public async Task<List<Order>> GetOrdersByUserIdAsync(int userId)
         {
             return await _dbSet
+                .Include(o => o.Customer)
+                .Include(o => o.User)
                 .Where(o => o.UserId == userId)
                 .ToListAsync();
         }

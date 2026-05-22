@@ -1,9 +1,12 @@
+using System.Text;
 using GroveStart.Infra;
 using GroveStart.Model;
 using GroveStart.Repository;
 using GroveStart.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +21,25 @@ var connectionString = DotNetEnv.Env.GetString("ConnectionStrings__DefaultConnec
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "Connection string 'DefaultConnection' não está configurada (appsettings / variáveis de ambiente).");
+
+var jwtKey = DotNetEnv.Env.GetString("JwtKey");
+if (string.IsNullOrWhiteSpace(jwtKey))
+    throw new InvalidOperationException(
+        "JwtKey não está configurada (appsettings / variáveis de ambiente).");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = DotNetEnv.Env.GetString("JwtIssuer"),
+        ValidAudience = DotNetEnv.Env.GetString("JwtAudience"),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
 
 builder.Services.AddDbContext<ConnectionContext>(options =>
 {
@@ -42,7 +64,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher<User>,PasswordHasher<User>>();
 // Serviços
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IUserService, UserService>();  // Adicione esta linha
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddAuthorization();
 
 // Serviços
 builder.Services.AddControllers();
@@ -85,7 +109,7 @@ else
 {
     app.UseDeveloperExceptionPage();
 }
-app.UseAuthentication();
+// app.UseAuthentication();
 app.UseAuthorization();
 app.Use(async(context,next) =>
 {
@@ -111,13 +135,13 @@ app.Use(async (context, next) =>
         return;
     }
 
-    var IsAuthorized = context.Request.Headers["API_KEY_TESTE"] == "MY_API_KEY";
-    if (!IsAuthorized)
-    {
-        context.Response.StatusCode = 403;
-        await context.Response.WriteAsync("Access Denied");
-        return;
-    }
+    // var IsAuthorized = context.Request.Headers["API_KEY_TESTE"] == "MY_API_KEY";
+    // if (!IsAuthorized)
+    // {
+    //     context.Response.StatusCode = 403;
+    //     await context.Response.WriteAsync("Access Denied");
+    //     return;
+    // }
     context.Response.Cookies.Append("SecureCookie", "SecureData",new CookieOptions
     {
         HttpOnly = true,
@@ -126,24 +150,24 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.Use(async (context, next) =>
-{
-    if (IsPublicProbePath(context.Request.Path))
-    {
-        await next();
-        return;
-    }
+// app.Use(async (context, next) =>
+// {
+//     if (IsPublicProbePath(context.Request.Path))
+//     {
+//         await next();
+//         return;
+//     }
 
-    // Check for a query parameter to simulate HTTPS enforcement (e.g., "?secure=true")
-    if (context.Request.Query["secure"] != "true")
-    {
-        context.Response.StatusCode = 400;
-        await context.Response.WriteAsync("Simulated HTTPS Required");
-        return;
-    }
+//     // Check for a query parameter to simulate HTTPS enforcement (e.g., "?secure=true")
+//     if (context.Request.Query["secure"] != "true")
+//     {
+//         context.Response.StatusCode = 400;
+//         await context.Response.WriteAsync("Simulated HTTPS Required");
+//         return;
+//     }
 
-    await next();
-});
+//     await next();
+// });
 
 if (app.Configuration.GetValue<bool>("UseHttpsRedirection"))
 {

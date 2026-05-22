@@ -21,6 +21,13 @@ namespace GroveStart.Model
 
         public int UserId { get; private set; }
         public int CustomerId { get; private set; }
+
+        /// <summary>Cliente do pedido (FK para <see cref="User"/> via <see cref="CustomerId"/>).</summary>
+        public User? Customer { get; private set; }
+
+        /// <summary>Usuário do pedido (FK para <see cref="User"/> via <see cref="UserId"/>).</summary>
+        public User? User { get; private set; }
+
         public string Title { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
 

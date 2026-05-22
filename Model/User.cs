@@ -28,6 +28,7 @@ namespace GroveStart.Model
 
         public int Age { get; private set; }
 
+        [JsonIgnore]
         public string Password {get;  private set;}
 
         public DateTime CreatedAt {get; private set;}
@@ -62,6 +63,4 @@ namespace GroveStart.Model
                 Password = passwordHash;
         }
     }
-
-
 }

@@ -23,6 +23,21 @@ namespace GroveStart.Infra
             _logger = logger;
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Customer)
+                .WithMany()
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.User)
+                .WithMany()
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var written = await base.SaveChangesAsync(cancellationToken);
