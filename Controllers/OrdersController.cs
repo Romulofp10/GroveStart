@@ -1,3 +1,4 @@
+using GroveStart.Dtos.Order;
 using GroveStart.Model;
 using GroveStart.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -31,11 +32,14 @@ namespace GroveStart.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Order order)
+        public async Task<IActionResult> Create([FromBody] RegisterOrderRequest request)
         {
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
+
             try
             {
-                var createdOrder = await _orderService.CreateOrderAsync(order);
+                var createdOrder = await _orderService.CreateOrderAsync(request);
                 return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, createdOrder);
             }
             catch (ArgumentException ex)

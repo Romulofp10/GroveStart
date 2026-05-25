@@ -37,10 +37,7 @@ namespace GroveStart.Repository
 
         public async Task<User> AddAsync(User user)
         {
-            _logger.LogInformation(
-                "UserRepository.AddAsync: adicionando usuário Email={Email}, Name={Name}",
-                user.Email,
-                user.Name);
+
             try
             {
                 var entity = (await _dbSet.AddAsync(user)).Entity;

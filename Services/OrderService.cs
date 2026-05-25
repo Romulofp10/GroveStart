@@ -1,3 +1,5 @@
+using GroveStart.Dtos.Order;
+using GroveStart.Helpers;
 using GroveStart.Model;
 using GroveStart.Repository;
 
@@ -12,6 +14,26 @@ namespace GroveStart.Services
             _orderRepository = orderRepository;
         }
 
+        public async Task<Order> CreateOrderAsync(RegisterOrderRequest request)
+        {
+            var startDate = DateTimeUtc.EnsureUtc(request.StartDate!.Value);
+            var endDate = DateTimeUtc.EnsureUtc(request.EndDate!.Value);
+
+            if (endDate <= startDate)
+                throw new InvalidOperationException("Data de fim deve ser posterior à data de início.");
+
+            var order = new Order(
+                request.UserId,
+                request.Title,
+                request.Description,
+                request.Period,
+                startDate,
+                endDate,
+                request.CustomerId);
+
+            return await CreateOrderAsync(order);
+        }
+
         public async Task<Order> CreateOrderAsync(Order order)
         {
             // Validações de negócio
@@ -20,6 +42,9 @@ namespace GroveStart.Services
 
             if (order.UserId <= 0)
                 throw new ArgumentException("ID do usuário inválido");
+
+            if (order.StartDate.Kind != DateTimeKind.Utc || order.EndDate.Kind != DateTimeKind.Utc)
+                throw new ArgumentException("Datas do pedido devem estar em UTC.");
 
             // Regras específicas
             if (order.Period == Period.Mensal && order.Title.Length < 5)

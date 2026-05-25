@@ -1,3 +1,4 @@
+using GroveStart.Dtos.Order;
 using GroveStart.Model;
 using GroveStart.Repository;
 
@@ -5,6 +6,7 @@ namespace GroveStart.Services
 {
     public interface IOrderService
     {
+        Task<Order> CreateOrderAsync(RegisterOrderRequest request);
         Task<Order> CreateOrderAsync(Order order);
         Task UpdateOrderAsync(Order order);
         Task DeleteOrderAsync(int id);

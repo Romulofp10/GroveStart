@@ -22,7 +22,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "Connection string 'DefaultConnection' não está configurada (appsettings / variáveis de ambiente).");
 
-var jwtKey = DotNetEnv.Env.GetString("JwtKey");
+var jwtKey = DotNetEnv.Env.GetString("Jwt__Key");
 if (string.IsNullOrWhiteSpace(jwtKey))
     throw new InvalidOperationException(
         "JwtKey não está configurada (appsettings / variáveis de ambiente).");
