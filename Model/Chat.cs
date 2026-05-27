@@ -15,9 +15,8 @@ namespace GroveStart.Model
 
         public int OrderId { get; set; }
 
-        public Chat(int id, int userId, int customerId, int orderId)
+        public Chat(int userId, int customerId, int orderId)
         {
-            Id = id;
             UserId = userId;
             CustomerId = customerId;
             OrderId = orderId;

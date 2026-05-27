@@ -34,7 +34,7 @@ namespace GroveStart.Model
         public Period Period { get; private set; }
         public DateTime StartDate { get; private set; }
         public DateTime EndDate { get; private set; }
-        
+
 
         public Order(int userId, string title, string description, Period period, DateTime startDate, DateTime endDate, int customerId)
         {
@@ -48,7 +48,7 @@ namespace GroveStart.Model
         }
 
         // Método para atualizar os dados
-        public void Update(int userId, int customerId,string title, string description, Period period, DateTime startDate, DateTime endDate)
+        public void Update(int userId, int customerId, string title, string description, Period period, DateTime startDate, DateTime endDate)
         {
             UserId = userId;
             CustomerId = customerId;
@@ -58,5 +58,7 @@ namespace GroveStart.Model
             StartDate = startDate;
             EndDate = endDate;
         }
+        
+        
     }
 }

@@ -1,3 +1,4 @@
+using System.Net.WebSockets;
 using System.Text;
 using GroveStart.Infra;
 using GroveStart.Model;
@@ -15,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.RestApi);
 DotNetEnv.Env.Load();
 
 var connectionString = DotNetEnv.Env.GetString("ConnectionStrings__DefaultConnection");
@@ -61,12 +63,15 @@ builder.Services.AddHttpLogging(logging =>
 // Repositórios específicos
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IPasswordHasher<User>,PasswordHasher<User>>();
 // Serviços
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddAuthorization();
+
 
 // Serviços
 builder.Services.AddControllers();
@@ -79,6 +84,15 @@ builder.Services.AddHttpLogging(logging =>
 });
 
 var app = builder.Build();
+var webSocketOptions = new WebSocketOptions
+{
+    KeepAliveTimeout = TimeSpan.FromSeconds(30),
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
+};
+webSocketOptions.AllowedOrigins.Add("https://client.com");
+webSocketOptions.AllowedOrigins.Add("https://www.client.com");
+
+app.UseWebSockets(webSocketOptions);
 
 static bool IsSwaggerOrOpenApiPath(PathString path) =>
     path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase)
@@ -142,12 +156,56 @@ app.Use(async (context, next) =>
     //     await context.Response.WriteAsync("Access Denied");
     //     return;
     // }
-    context.Response.Cookies.Append("SecureCookie", "SecureData",new CookieOptions
+    context.Response.Cookies.Append("SecureCookie", "SecureData", new CookieOptions
     {
         HttpOnly = true,
         Secure = true
     });
     await next();
+});
+
+  async Task Echo(WebSocket webSocket)
+{
+    var buffer = new byte[1024 * 4];
+    var receiveResult = await webSocket.ReceiveAsync(
+        new ArraySegment<byte>(buffer), CancellationToken.None);
+
+    while (!receiveResult.CloseStatus.HasValue)
+    {
+        await webSocket.SendAsync(
+            new ArraySegment<byte>(buffer, 0, receiveResult.Count),
+            receiveResult.MessageType,
+            receiveResult.EndOfMessage,
+            CancellationToken.None);
+
+        receiveResult = await webSocket.ReceiveAsync(
+            new ArraySegment<byte>(buffer), CancellationToken.None);
+    }
+
+    await webSocket.CloseAsync(
+        receiveResult.CloseStatus.Value,
+        receiveResult.CloseStatusDescription,
+        CancellationToken.None);
+}
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/ws/dotnet")
+    {
+         if (context.WebSockets.IsWebSocketRequest)
+        {
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+            await Echo(webSocket);
+        }
+        else
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        }
+    }
+    else
+    {
+        await next(context);
+    }
 });
 
 // app.Use(async (context, next) =>
